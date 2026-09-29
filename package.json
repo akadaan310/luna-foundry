@@ -1,0 +1,10 @@
+{
+  "name": "luna-foundry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lunar Foundry: the public Luna URL. Any URL read as structures and moves; the Lunar Harness keeps every LLM's ident.",
+  "engines": { "node": ">=20" },
+  "scripts": { "dev": "node dev.js", "test": "node --test test/*.test.js" },
+  "dependencies": { "@vercel/blob": "^1.1.1" }
+}

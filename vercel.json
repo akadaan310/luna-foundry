@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/api/index" },
+    { "source": "/lens", "destination": "/api/index" },
+    { "source": "/i/:ident", "destination": "/api/ident?ident=:ident" }
+  ]
+}
