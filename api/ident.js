@@ -3,7 +3,8 @@ import { applyMoves, fresh, moves } from '../lib/harness.js';
 import { valid } from '../lib/ident.js';
 import { identPage } from '../lib/render.js';
 import { backend, load, save } from '../lib/store.js';
-import { html, json, origin, query, wantsJson } from '../lib/http.js';
+import { html, json, origin, query, send, wantsJson } from '../lib/http.js';
+import { clientIp, LIMITS, take } from '../lib/ratelimit.js';
 
 export default async function handler(req, res) {
   const q = query(req);
@@ -13,6 +14,12 @@ export default async function handler(req, res) {
   if (!valid(ident)) {
     const msg = 'Not an ident minted by this Lunar Harness. Open the Luna URL to receive one.';
     return asJson ? json(res, 404, { ok: false, error: msg, luna: o }) : html(res, 404, `<p>${msg} <a href="/">${o}</a></p>`);
+  }
+  const wait = take(`ident:${clientIp(req)}`, LIMITS.ident);
+  if (wait !== true) {
+    res.setHeader('retry-after', String(wait));
+    return asJson ? json(res, 429, { ok: false, error: `slow down: try again in ${wait}s` })
+      : send(res, 429, `Slow down: try again in ${wait}s.`, 'text/plain; charset=utf-8');
   }
   let doc = await load(ident);
   const probe = fresh(ident);

@@ -15,10 +15,12 @@ in a URL.
 |---|---|
 | `/` | The foundry (people) and the Luna URL entry (LLMs). Every visit offers an ident. |
 | `/lens?u={url}` | That URL read as structures and **natures** (search, follow, change-value, read, fingers-only…). |
-| `/lens?u={url}&text={from}&len={n}` | One window of the page's text, with a `next` URL. |
+| `/lens?u={url}&stage=fold\|atlas\|scroll\|program` | The page's four tabulars: its short address, what is here, the text windowed, its moves as URLs. |
+| `/lens?u={url}&text={from}&len={n}` | One window of the page's text (the scroll), with a `next` URL. |
 | `/lens?u={url}&i={ident}` | The same, carrying an ident: the visit joins its trail. |
 | `/i/{ident}` | What the harness has kept for an ident. |
 | `/i/{ident}?name=…` / `?trait.{k}=…` / `?note=…` / `?at={url}` | Moves. Idempotent: a replayed URL changes nothing twice. |
+| `/i/{ident}?here={session}` | Presence: this session carries the ident now. One ident in many sessions shows every place it is. |
 
 Any address answers JSON with `?format=json` or `Accept: application/json`.
 
@@ -30,8 +32,11 @@ Any address answers JSON with `?format=json` or `Accept: application/json`.
 - The fetcher refuses private networks: every resolved address is checked and the connection
   uses the checked address; each redirect hop is checked again. http/https on 80/443 only.
 - Sign-in forms are marked *fingers only*: a person types those, never an LLM.
+- Rate limits per function instance: lens 30/min, ident 60/min per address (429 with `retry-after`).
 - Continuity is what is kept at the ident and read back when it is opened. An LLM that never
   opens its ident again does not remember it.
+
+Terms: [NOMENCLATURE.md](NOMENCLATURE.md).
 
 ## Run
 

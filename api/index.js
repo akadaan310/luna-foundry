@@ -7,7 +7,8 @@ import { mint, valid } from '../lib/ident.js';
 import { lens } from '../lib/lens.js';
 import { EXAMPLES, foundryPage } from '../lib/render.js';
 import { load, save } from '../lib/store.js';
-import { html, json, origin, query, wantsJson } from '../lib/http.js';
+import { html, json, origin, query, send, wantsJson } from '../lib/http.js';
+import { clientIp, LIMITS, take } from '../lib/ratelimit.js';
 
 const normalize = (u) => {
   const t = u.trim();
@@ -37,6 +38,13 @@ export default async function handler(req, res) {
     return html(res, 200, foundryPage({ origin: o, ident, carried }));
   }
 
+  const wait = take(`lens:${clientIp(req)}`, LIMITS.lens);
+  if (wait !== true) {
+    res.setHeader('retry-after', String(wait));
+    return asJson ? json(res, 429, { ok: false, error: `slow down: try again in ${wait}s` })
+      : send(res, 429, `Slow down: try again in ${wait}s.`, 'text/plain; charset=utf-8');
+  }
+
   let result;
   try {
     result = lens(await fetchPage(normalize(input)), o);
@@ -48,12 +56,18 @@ export default async function handler(req, res) {
 
   const full = result._text;
   delete result._text;
-  if (q.has('text')) {
+  const stage = ['fold', 'atlas', 'scroll', 'program'].includes(q.get('stage')) ? q.get('stage')
+    : q.has('text') ? 'scroll' : 'atlas';
+  const here = `${o}/lens?u=${encodeURIComponent(result.url)}${carried ? `&i=${ident}` : ''}`;
+  result.stage = stage;
+  result.stages = { fold: here, atlas: `${here}&stage=atlas`, scroll: `${here}&stage=scroll&text=0`,
+    program: `${here}&stage=program` };
+  if (stage === 'scroll' || q.has('text')) {
     const from = Math.max(0, parseInt(q.get('text'), 10) || 0);
     const size = Math.min(8000, Math.max(200, parseInt(q.get('len'), 10) || 3000));
     const end = Math.min(full.length, from + size);
-    const base = `${o}/lens?u=${encodeURIComponent(result.url)}${carried ? `&i=${ident}` : ''}`;
-    result.textWindow = { from, text: full.slice(from, end), next: end < full.length ? `${base}&text=${end}&len=${size}` : null };
+    result.textWindow = { from, text: full.slice(from, end),
+      next: end < full.length ? `${here}&stage=scroll&text=${end}&len=${size}` : null };
   }
 
   if (carried) {

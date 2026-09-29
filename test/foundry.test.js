@@ -87,3 +87,36 @@ test('HTTP: the root mints an ident, /i keeps moves', async () => {
     srv.close();
   }
 });
+
+test('presence: one ident in many places, a heartbeat that does not bump the revision', () => {
+  const d = fresh('X');
+  applyMoves(d, new URLSearchParams('here=chatgpt-7u'));
+  applyMoves(d, new URLSearchParams('here=claude-web&at=https://nasa.gov/'));
+  assert.deepEqual(Object.keys(d.presence).sort(), ['chatgpt-7u', 'claude-web']);
+  assert.equal(d.presence['claude-web'].at, 'https://nasa.gov/');
+  assert.equal(d.rev, 1, 'only the at= trail move bumps the revision');
+});
+
+test('rate limit answers false-then-wait', async () => {
+  const { take } = await import('../lib/ratelimit.js');
+  for (let i = 0; i < 3; i++) assert.equal(take('t:ip', 3), true);
+  const wait = take('t:ip', 3);
+  assert.ok(typeof wait === 'number' && wait >= 1, String(wait));
+});
+
+test('HTTP: presence shows on the ident; stages render', async () => {
+  const srv = http.createServer(route).listen(0);
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const root = await (await fetch(`${base}/?format=json`)).json();
+    const path = new URL(root.ident.url).pathname;
+    await fetch(`${base}${path}?here=session-a`);
+    await fetch(`${base}${path}?here=session-b`);
+    const kept = await (await fetch(`${base}${path}?format=json`)).json();
+    assert.deepEqual(Object.keys(kept.kept.presence).sort(), ['session-a', 'session-b']);
+    const page = await (await fetch(`${base}${path}`)).text();
+    assert.match(page, /Where it is now — 2 places/);
+  } finally {
+    srv.close();
+  }
+});
