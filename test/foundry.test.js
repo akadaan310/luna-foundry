@@ -32,6 +32,11 @@ test('the fetcher refuses private networks', async () => {
     assert.ok(isPrivate(ip), ip);
   }
   assert.ok(!isPrivate('8.8.8.8'));
+  assert.ok(!isPrivate('64:ff9b::1716:1a0a'), 'NAT64 of a public IPv4');
+  assert.ok(!isPrivate('64:ff9b::23.22.26.10'));
+  assert.ok(isPrivate('64:ff9b::a9fe:a9fe'), 'NAT64 of 169.254.169.254');
+  assert.ok(isPrivate('fe80::1'));
+  assert.ok(!isPrivate('2606:4700::6810:84e5'));
   assert.throws(() => checkUrl('http://127.0.0.1/'));
   assert.throws(() => checkUrl('http://localhost/'));
   assert.throws(() => checkUrl('file:///etc/passwd'));
