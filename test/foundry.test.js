@@ -32,6 +32,8 @@ test('the fetcher refuses private networks', async () => {
     assert.ok(isPrivate(ip), ip);
   }
   assert.ok(!isPrivate('8.8.8.8'));
+  assert.ok(!isPrivate('192.0.66.108'), 'nasa.gov (WordPress VIP) is public');
+  assert.ok(isPrivate('192.0.2.1') && isPrivate('192.0.0.9') && isPrivate('203.0.113.5'));
   assert.ok(!isPrivate('64:ff9b::1716:1a0a'), 'NAT64 of a public IPv4');
   assert.ok(!isPrivate('64:ff9b::23.22.26.10'));
   assert.ok(isPrivate('64:ff9b::a9fe:a9fe'), 'NAT64 of 169.254.169.254');
